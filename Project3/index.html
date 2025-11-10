@@ -56,9 +56,15 @@
     const formattedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
     const endpoint = `https://www.amiiboapi.com/api/amiibo/?name=${encodeURIComponent(formattedName)}&t=${Date.now()}`;
     console.log("Fetching:", endpoint);
-    const resp = await fetch(endpoint);
-    const json = await resp.json();
-    return json;
+    try {
+      const resp = await fetch(endpoint);
+      if (!resp.ok) throw new Error("Network response was not ok");
+      const json = await resp.json();
+      return json;
+    } catch (err) {
+      document.getElementById('error').textContent = `Error fetching data: ${err.message}`;
+      return { amiibo: [] };
+    }
   }
 
   function renderAmiibo(data) {
@@ -72,9 +78,9 @@
 
     const a = data.amiibo[0];
     container.innerHTML = `
-      <div><strong>Name:</strong> ${a.name}</div>
-      <div><strong>Game Series:</strong> ${a.gameSeries}</div>
-      <div><strong>Amiibo Series:</strong> ${a.amiiboSeries}</div>
+      <div class="info"><span>Name:</span> ${a.name}</div>
+      <div class="info"><span>Game Series:</span> ${a.gameSeries}</div>
+      <div class="info"><span>Amiibo Series:</span> ${a.amiiboSeries}</div>
       <img src="${a.image}" alt="${a.name}">
     `;
   }
@@ -86,3 +92,5 @@
     renderAmiibo(data);
   })();
 </script>
+</body>
+</html>
