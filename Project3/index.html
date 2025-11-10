@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-  <!--Nichelle Barton-->
-  <!--Oct 26, 2025-->
+<!--Nichelle Barton-->
+<!--Oct 26, 2025-->
 <head>
   <meta charset="UTF-8">
   <title>Amiibo Viewer</title>
@@ -34,12 +34,19 @@
     #error {
       color: red;
     }
+    #selector {
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
 
 <div id="container">
   <h1>Amiibo Viewer</h1>
+  <div id="selector">
+    <label for="characterSelect">Choose a character:</label>
+    <select id="characterSelect"></select>
+  </div>
   <div id="error"></div>
   <div id="amiiboData">
     <!-- dynamic content goes here -->
@@ -47,15 +54,22 @@
 </div>
 
 <script>
-  function getQueryParam(name) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(name);
+  async function fetchAllAmiibo() {
+    const endpoint = `https://www.amiiboapi.com/api/amiibo/?t=${Date.now()}`;
+    try {
+      const resp = await fetch(endpoint);
+      if (!resp.ok) throw new Error("Failed to fetch Amiibo list");
+      const json = await resp.json();
+      return json.amiibo;
+    } catch (err) {
+      document.getElementById('error').textContent = `Error loading Amiibo list: ${err.message}`;
+      return [];
+    }
   }
 
   async function fetchAmiibo(name) {
     const formattedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
     const endpoint = `https://www.amiiboapi.com/api/amiibo/?name=${encodeURIComponent(formattedName)}&t=${Date.now()}`;
-    console.log("Fetching:", endpoint);
     try {
       const resp = await fetch(endpoint);
       if (!resp.ok) throw new Error("Network response was not ok");
@@ -70,6 +84,7 @@
   function renderAmiibo(data) {
     const container = document.getElementById('amiiboData');
     container.innerHTML = '';
+    document.getElementById('error').textContent = '';
 
     if (!data.amiibo || data.amiibo.length === 0) {
       container.innerHTML = '<p>No amiibo found for that name.</p>';
@@ -85,12 +100,33 @@
     `;
   }
 
-  (async function init() {
-    const nameParam = getQueryParam('name') || 'Mario';
-    document.querySelector('h1').textContent = `Amiibo Viewer: ${nameParam}`;
-    const data = await fetchAmiibo(nameParam);
+  async function populateDropdown() {
+    const select = document.getElementById('characterSelect');
+    const amiiboList = await fetchAllAmiibo();
+    const uniqueNames = [...new Set(amiiboList.map(a => a.name))].sort();
+
+    uniqueNames.forEach(name => {
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      select.appendChild(option);
+    });
+
+    updateViewer(select.value);
+  }
+
+  async function updateViewer(name) {
+    document.querySelector('h1').textContent = `Amiibo Viewer: ${name}`;
+    const data = await fetchAmiibo(name);
     renderAmiibo(data);
-  })();
+  }
+
+  document.getElementById('characterSelect').addEventListener('change', (e) => {
+    updateViewer(e.target.value);
+  });
+
+  // Initial load
+  populateDropdown();
 </script>
 </body>
 </html>
