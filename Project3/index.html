@@ -47,30 +47,23 @@
 </div>
 
 <script>
-  // get query param by name
   function getQueryParam(name) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(name);
   }
 
   async function fetchAmiibo(name) {
-    const endpoint = `https://amiiboapi.com/api/amiibo/?name=${encodeURIComponent(name)}`;
-    try {
-      const resp = await fetch(endpoint);
-      if (!resp.ok) {
-        throw new Error('Network response was not OK');
-      }
-      const json = await resp.json();
-      return json;
-    } catch (err) {
-      console.error('Fetch error:', err);
-      throw err;
-    }
+    const formattedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+    const endpoint = `https://www.amiiboapi.com/api/amiibo/?name=${encodeURIComponent(formattedName)}&t=${Date.now()}`;
+    console.log("Fetching:", endpoint);
+    const resp = await fetch(endpoint);
+    const json = await resp.json();
+    return json;
   }
 
   function renderAmiibo(data) {
     const container = document.getElementById('amiiboData');
-    container.innerHTML = '';  // clear
+    container.innerHTML = '';
 
     if (!data.amiibo || data.amiibo.length === 0) {
       container.innerHTML = '<p>No amiibo found for that name.</p>';
@@ -78,28 +71,18 @@
     }
 
     const a = data.amiibo[0];
-
-
-    const html = `
-      <div class="info"><span>Name:</span> ${a.name}</div>
-      <div class="info"><span>Game Series:</span> ${a.gameSeries}</div>
-      <div class="info"><span>Amiibo Series:</span> ${a.amiiboSeries}</div>
+    container.innerHTML = `
+      <div><strong>Name:</strong> ${a.name}</div>
+      <div><strong>Game Series:</strong> ${a.gameSeries}</div>
+      <div><strong>Amiibo Series:</strong> ${a.amiiboSeries}</div>
       <img src="${a.image}" alt="${a.name}">
     `;
-    container.innerHTML = html;
   }
 
   (async function init() {
-    const nameParam = getQueryParam('name') || 'Mario';  
+    const nameParam = getQueryParam('name') || 'Mario';
     document.querySelector('h1').textContent = `Amiibo Viewer: ${nameParam}`;
-    try {
-      const data = await fetchAmiibo(nameParam);
-      renderAmiibo(data);
-    } catch (err) {
-      document.getElementById('error').textContent = 'Error retrieving data. Could you try again later?';
-    }
+    const data = await fetchAmiibo(nameParam);
+    renderAmiibo(data);
   })();
 </script>
-
-</body>
-</html>
