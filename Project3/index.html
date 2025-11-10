@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <!--Nichelle Barton-->
+  <!--Oct 26, 2025-->
+<head>
+  <meta charset="UTF-8">
+  <title>Amiibo Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f4f4f4;
+    }
+    #container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      max-width: 600px;
+      margin: auto;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 10px 0;
+    }
+    .info {
+      margin: 10px 0;
+    }
+    .info span {
+      font-weight: bold;
+    }
+    #error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+<div id="container">
+  <h1>Amiibo Viewer</h1>
+  <div id="error"></div>
+  <div id="amiiboData">
+    <!-- dynamic content goes here -->
+  </div>
+</div>
+
+<script>
+  // get query param by name
+  function getQueryParam(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+  }
+
+  async function fetchAmiibo(name) {
+    const endpoint = `https://amiiboapi.com/api/amiibo/?name=${encodeURIComponent(name)}`;
+    try {
+      const resp = await fetch(endpoint);
+      if (!resp.ok) {
+        throw new Error('Network response was not OK');
+      }
+      const json = await resp.json();
+      return json;
+    } catch (err) {
+      console.error('Fetch error:', err);
+      throw err;
+    }
+  }
+
+  function renderAmiibo(data) {
+    const container = document.getElementById('amiiboData');
+    container.innerHTML = '';  // clear
+
+    if (!data.amiibo || data.amiibo.length === 0) {
+      container.innerHTML = '<p>No amiibo found for that name.</p>';
+      return;
+    }
+
+    const a = data.amiibo[0];
+
+
+    const html = `
+      <div class="info"><span>Name:</span> ${a.name}</div>
+      <div class="info"><span>Game Series:</span> ${a.gameSeries}</div>
+      <div class="info"><span>Amiibo Series:</span> ${a.amiiboSeries}</div>
+      <img src="${a.image}" alt="${a.name}">
+    `;
+    container.innerHTML = html;
+  }
+
+  (async function init() {
+    const nameParam = getQueryParam('name') || 'Mario';  
+    document.querySelector('h1').textContent = `Amiibo Viewer: ${nameParam}`;
+    try {
+      const data = await fetchAmiibo(nameParam);
+      renderAmiibo(data);
+    } catch (err) {
+      document.getElementById('error').textContent = 'Error retrieving data. Could you try again later?';
+    }
+  })();
+</script>
+
+</body>
+</html>
